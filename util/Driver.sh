@@ -60,6 +60,11 @@ for (( ; ; )); do
        Rscript R/calculate_irl_setup.R 
        Rscript R/csv.StatArchive.R     
 
+       # Add current time and cycle to index.md
+       header_time=`date '+%Y-%m-%d'`
+       cycle=`cat ../current.run`
+       current_time_cycle=$header_time' '$cycle"Z"
+       sed -i "s/%CURRENTTIMECYCLE%/${current_time_cycle}/g"  docs/index.md
        # PT June 2019 ------------------------------------------------------------------------------
        # Stats CSV file and plots will be archived all in data/
        # I did not edit the R codes to reflect these changes as
