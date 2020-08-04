@@ -13,7 +13,7 @@ library(lubridate) # nice date handling
 library(dplyr) # easy row binding
 
 # functions ---------------------------------------------------------------
-
+#
 # grab the url (through ncep's ftp site) of the grib2 we want to download
 getGRIBurl <- function(ens.mem, date, run, fcst.hour) {
     return(paste('https://www.ftp.ncep.noaa.gov/data/nccf/com/gens/prod/gefs.', 
