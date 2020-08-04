@@ -16,7 +16,7 @@ library(dplyr) # easy row binding
 
 # grab the url (through ncep's ftp site) of the grib2 we want to download
 getGRIBurl <- function(ens.mem, date, run, fcst.hour) {
-    return(paste('http://www.ftp.ncep.noaa.gov/data/nccf/com/gens/prod/gefs.', 
+    return(paste('https://www.ftp.ncep.noaa.gov/data/nccf/com/gens/prod/gefs.', 
                  date, '/', run, '/pgrb2ap5/', ens.mem, '.t', run, 
                  'z.pgrb2a.0p50.f', fcst.hour, sep = ''))
 }
