@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+<style> /* set the CSS */
+
+body { font: 14px 'Open Sans';}
+
+path {
+    stroke: #333;
+    stroke-width: 3;
+    fill: none;
+}
+
+.min, .max {
+    stroke: lightgrey;
+    stroke-width: 2;
+    opacity: 0;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+zero-line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+/* grid lines */
+.grid .tick {
+    stroke: lightgrey;
+    stroke-opacity: 0.25;
+    shape-rendering: crispEdges;
+}
+.grid path {
+    stroke-width: 0;
+}
+
+.area {
+    fill: steelblue;
+    stroke: #325C80;
+    stroke-width: 1;
+    opacity: 0.4;
+}
+
+.area2 {
+    fill: lightsteelblue;
+    stroke: steelblue;
+    stroke-width: 1;
+    opacity: 0.5;
+}
+
+svg circle {
+    fill: steelblue;
+    opacity: 0.3;
+}
+
+</style>
+<body>
+
+<!-- load the d3.js library -->
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+<script>
+
+// Set the dimensions of the canvas / graph
+var margin = {top: 30, right: 20, bottom: 40, left: 50},
+    width = 700 - margin.left - margin.right,
+    setupHeight = 370,
+    hodoHeight = 360,
+    height = setupHeight + hodoHeight;
+
+// Parse the date / time
+var parseDate = d3.time.format("%Y-%m-%d %H:%M:%S").parse;
+var formatTime = d3.time.format("%e %b %H UTC");
+var bisectDate = d3.bisector(function(d) { return d.validtime; }).left;
+
+// Set the ranges
+var x = d3.time.scale().range([0, width]);
+var y = d3.scale.linear().range([setupHeight, 0]);
+
+// Define the axes
+var xAxis = d3.svg.axis().scale(x)
+    .orient("bottom").ticks(10);
+
+var yAxis = d3.svg.axis().scale(y)
+    .orient("left").ticks(10);
+
+// Define the area fill
+var area = d3.svg.area()
+    .interpolate("basis")
+    .x(function(d) { return x(d.validtime); })
+    .y0(function(d) { return y(d.min); })
+    .y1(function(d) { return y(d.max); });
+
+// Define area2 fills
+var area2 = d3.svg.area()
+    .interpolate("basis")
+    .x(function(d) { return x(d.validtime); })
+    .y0(function(d) { return y(d.max); })
+    .y1(function(d) { return y(d.max + 5); });
+
+var area3 = d3.svg.area()
+    .interpolate("basis")
+    .x(function(d) { return x(d.validtime); })
+    .y0(function(d) { return y(d.min); })
+    .y1(function(d) { return y(d.min - 5); });
+
+// Define the line
+var meanLine = d3.svg.line()
+    .interpolate("basis")
+    .x(function(d) { return x(d.validtime); })
+    .y(function(d) { return y(d.mean); });
+
+var minLine = d3.svg.line()
+    .interpolate("basis")
+    .x(function(d) { return x(d.validtime); })
+    .y(function(d) { return y(d.min); });
+
+var maxLine = d3.svg.line()
+    .interpolate("basis")
+    .x(function(d) { return x(d.validtime); })
+    .y(function(d) { return y(d.max); });
+
+// Adds the svg canvas
+var svg = d3.select("body")
+    .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+        .attr("transform",
+              "translate(" + margin.left + "," + margin.top + ")");
+
+function make_x_axis() {
+    return d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .ticks(5)
+}
+function make_y_axis() {
+    return d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(10)
+}
+
+// Get the data
+d3.csv("members.csv", function(error, data) {
+    data.forEach(function(d) {
+        d.runtime = parseDate(d.runtime);
+        d.validstring = d.validtime;
+        d.validtime = parseDate(d.validtime);
+        d.fcsthour = +d.fcsthour;
+        d.member = d.member;
+        d.u = +d.u;
+        d.v = +d.v;
+        d.wndrun_u = +d.wndrun_u;
+        d.wndrun_v = +d.wndrun_v;
+        d.setup = +d.setup;
+        d.setup_error = +d.setup_error;
+    });
+
+    // calculate the ensemble mean, min, and max
+    var ens_summary = d3.nest()
+        .key(function(d) { return d.validstring;}).sortKeys(d3.ascending)
+        .rollup(function(d) {
+            return { 'mean' : d3.mean(d, function(g) {return g.setup; }),
+                     'min' : d3.min(d, function(g) {return g.setup; }),
+                     'max' : d3.max(d, function(g) {return g.setup; }) };
+        }).entries(data);
+
+    ens_summary.forEach(function(d) {
+        d.validtime = parseDate(d.key);
+        d.max = +d.values.max;
+        d.mean = +d.values.mean;
+        d.min = +d.values.min;
+    });
+
+    // Scale the range of the data, adding 10% to the y at the top and bottom
+    x_range = d3.extent(data, function(d) { return d.validtime; })
+    x.domain(x_range);
+    y_range = d3.extent(data, function(d) { return d.setup; })
+    y_10 = (y_range[1] - y_range[0]) / 10
+    y.domain([y_range[0] - y_10, y_range[1] + y_10]);
+
+    // Add the X Axis
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + setupHeight + ")")
+        .call(xAxis);
+
+    // text label for the x axis
+    svg.append("text")
+        .attr("transform",
+              "translate(" + (width/2) + " ," +
+                         (setupHeight + margin.bottom) + ")")
+        .style("text-anchor", "middle")
+        .text("Date / Time (UTC)");
+
+    // Add the Y Axis
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis);
+
+    svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -50)
+        .attr("x", 0 - (setupHeight / 2))
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Setup (cm)");
+
+    // grid lines
+    svg.append("g")
+        .attr("class", "grid")
+        .attr("transform", "translate(0," + setupHeight + ")")
+        .call(make_x_axis()
+            .tickSize(-setupHeight, 0, 0)
+            .tickFormat("")
+        );
+    svg.append("g")
+        .attr("class", "grid")
+        .call(make_y_axis()
+            .tickSize(-width, 0, 0)
+            .tickFormat("")
+        );
+
+    // Add dashed line for zero
+    if (y_range[0] - y_10 < 0 && y_range[1] + y_10 > 0) {
+        console.log(x_range[0])
+        svg.append("line")
+            .attr("x1", x(x_range[0]))
+            .attr("x2", x(x_range[1]))
+            .attr("y1", y(0))
+            .attr("y2", y(0))
+            .style("stroke", "#000")
+            .style("opacity", 0.5);
+    }
+
+    // Add the area
+    svg.append("path")
+        .datum(ens_summary)
+        .attr("class", "area")
+        .attr("d", area);
+
+    svg.append("path")
+        .datum(ens_summary)
+        .attr("class", "area2")
+        .attr("d", area2);
+
+    svg.append("path")
+        .datum(ens_summary)
+        .attr("class", "area2")
+        .attr("d", area3);
+
+    // Add the scatter points and tooltip
+    svg.selectAll("dot")
+        .data(data)
+        .enter().append("circle")
+        .attr("r", 2.5)
+        .attr("cx", function(d) { return x(d.validtime); })
+        .attr("cy", function(d) { return y(d.setup); });
+
+    // Add the ensemble min, mean, and max paths.
+    var ensMax = svg.append("g");
+    ensMax.append("path")
+        .attr("class", "line")
+        .attr("class", "max")
+        .attr("d", maxLine(ens_summary));
+
+    var ensMin = svg.append("g");
+    ensMin.append("path")
+        .attr("class", "line")
+        .attr("class", "min")
+        .attr("d", minLine(ens_summary));
+
+    var ensMean = svg.append("g");
+    ensMean.append("path")
+        .attr("class", "line")
+        .attr("class", "mean")
+        .attr("d", meanLine(ens_summary));
+
+    var focus = svg.append("g")
+        .style("display", "none");
+
+    // append the x line
+    focus.append("line")
+        .attr("class", "x")
+        .style("stroke", "black")
+        .style("stroke-dasharray", "3,3")
+        .style("opacity", 0.5)
+        .attr("y1", 0)
+        .attr("y2", setupHeight);
+
+    // Add the ensemble mean, min, and max tooltip circles
+    focus.append("circle")
+        .attr("class", "min")
+        .style("fill", "steelblue")
+        .style("stroke", "steelblue")
+        .style("opacity", 1)
+        .attr("r", 3);
+    focus.append("circle")
+        .attr("class", "max")
+        .style("fill", "steelblue")
+        .style("stroke", "steelblue")
+        .style("opacity", 1)
+        .attr("r", 3);
+    focus.append("circle")
+        .attr("class", "mean")
+        .style("fill", "#333")
+        .style("stroke", "black")
+        .style("opacity", 1)
+        .attr("r", 4);
+
+    // add the date at the bottom
+    focus.append("text")
+        .attr("class", "date1")
+        .style("stroke", "white")
+        .style("stroke-width", "3px")
+        .style("opacity", 0.9)
+        .attr("dy", "-.5em");
+    focus.append("text")
+        .attr("class", "date2")
+        .attr("dy", "-.5em");
+
+    // add text for ensemble mean, min, and max
+    focus.append("text")
+        .attr("class", "min1")
+        .style("stroke", "white")
+        .style("stroke-width", "4px")
+        .style("opacity", 0.9)
+        .attr("dy", "4");
+    focus.append("text")
+        .attr("class", "min2")
+        .style("stroke", "steelblue")
+        .attr("dy", "4");
+    focus.append("text")
+        .attr("class", "max1")
+        .style("stroke", "white")
+        .style("stroke-width", "4px")
+        .style("opacity", 0.9)
+        .attr("dy", "4");
+    focus.append("text")
+        .attr("class", "max2")
+        .style("stroke", "steelblue")
+        .attr("dy", "4");
+    focus.append("text")
+        .attr("class", "mean1")
+        .style("stroke", "white")
+        .style("stroke-width", "4px")
+        .style("opacity", 0.9)
+        .style("font-size", "17px")
+        .attr("dy", "4");
+    focus.append("text")
+        .attr("class", "mean2")
+        .style("stroke", "#333")
+        .style("font-size", "17px")
+        .attr("dy", "4");
+
+    // append the rectangle to capture mouse
+    svg.append("rect")
+        .attr("width", width)
+        .attr("height", setupHeight)
+        .style("fill", "none")
+        .style("pointer-events", "all")
+        .on("mouseover", function() {
+            focus.style("display", null);
+        })
+        .on("mouseout", function() {
+            focus.style("display", "none");
+        })
+        .on("mousemove", mousemove);
+
+    function mousemove() {
+		var x0 = x.invert(d3.mouse(this)[0]),
+		    i = bisectDate(ens_summary, x0, 1),
+		    d0 = ens_summary[i - 1],
+		    d1 = ens_summary[i],
+		    d = x0 - d0.validtime > d1.validtime - x0 ? d1 : d0;
+
+        var x_validtime = x(d.validtime);
+
+        // if we are approaching the end of the plot, move all the
+        // tooltips to the left of the vertical line
+        if (x_validtime > width - 80) {
+            focus.selectAll("text")
+                .style("text-anchor", "end")
+                .attr("dx", -8);
+        } else {
+            focus.selectAll("text")
+                .style("text-anchor", "start")
+                .attr("dx", 8);
+        }
+
+        focus.select(".x")
+		    .attr("transform",
+		          "translate(" + x_validtime + "," +
+		                         y(d.max) + ")")
+		               .attr("y2", setupHeight - y(d.max));
+
+		focus.select("circle.mean")
+		    .attr("transform",
+		          "translate(" + x_validtime + "," +
+		                         y(d.mean) + ")");
+
+        focus.select("circle.min")
+ 		    .attr("transform",
+ 		          "translate(" + x_validtime + "," +
+ 		                         y(d.min) + ")");
+
+        focus.select("circle.max")
+  		    .attr("transform",
+  		          "translate(" + x_validtime + "," +
+  		                         y(d.max) + ")");
+
+        focus.select("text.date1")
+ 		    .attr("transform",
+ 		          "translate(" + x_validtime + "," +
+ 		                         setupHeight + ")")
+ 		    .text(formatTime(d.validtime));
+        focus.select("text.date2")
+ 		    .attr("transform",
+ 		          "translate(" + x_validtime + "," +
+ 		                         setupHeight + ")")
+ 		    .text(formatTime(d.validtime));
+        focus.select("text.mean1")
+ 		    .attr("transform",
+ 		          "translate(" + x_validtime + "," +
+ 		                         y(d.mean) + ")")
+ 		    .text(d.mean.toFixed(2) + ' cm');
+        focus.select("text.mean2")
+ 		    .attr("transform",
+ 		          "translate(" + x_validtime + "," +
+ 		                         y(d.mean) + ")")
+ 		    .text(d.mean.toFixed(2) + ' cm');
+        focus.select("text.min1")
+ 		    .attr("transform",
+ 		          "translate(" + x(d.validtime) + "," +
+ 		                         y(d.min) + ")")
+ 		    .text(d.min.toFixed(2) + ' cm');
+        focus.select("text.min2")
+ 		    .attr("transform",
+ 		          "translate(" + x(d.validtime) + "," +
+ 		                         y(d.min) + ")")
+ 		    .text(d.min.toFixed(2) + ' cm');
+        focus.select("text.max1")
+ 		    .attr("transform",
+ 		          "translate(" + x(d.validtime) + "," +
+ 		                         y(d.max) + ")")
+ 		    .text(d.max.toFixed(2) + ' cm');
+        focus.select("text.max2")
+ 		    .attr("transform",
+ 		          "translate(" + x(d.validtime) + "," +
+ 		                         y(d.max) + ")")
+ 		    .text(d.max.toFixed(2) + ' cm');
+    }
+});
+
+</script>
+</body>
