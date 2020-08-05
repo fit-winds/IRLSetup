@@ -24,7 +24,7 @@ addEnsStats <- function(df.ens, cols = 2:22) {
 }
 ```
 
-## Current Forecast  %CURRENTTIMECYCLE%
+## Current Forecast %CURRENTTIMECYCLE%
 
 ```{r current_forecast, echo=FALSE, include=FALSE}
 load(paste(getwd(), '/../data/setup.RData', sep = ''))
