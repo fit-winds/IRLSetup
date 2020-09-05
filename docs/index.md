@@ -1,9 +1,9 @@
-Current Forecast 2020-09-04 18Z
+Current Forecast 2020-09-05 00Z
 -----------------------------------
 
 [![](img/raw_setup.png)](https://fit-winds.github.io/IRLSetup/img/raw_setup.png)
 
-> Forecast valid 2020-09-04 19:47:09.
+> Forecast valid 2020-09-05 01:53:12.
 
 Explanation
 -----------
@@ -17,7 +17,7 @@ star), and Sebastian, FL (white star). In general, southerly (northerly)
 winds result in increased water elevation near Titusville (Sebastian)
 and positive (negative) setup.
 
-The current (18 UTC 2020-09-04) 0.5° [Global Ensemble Forecast System
+The current (18 UTC 2020-09-05) 0.5° [Global Ensemble Forecast System
 (GEFS)](https://www.ncdc.noaa.gov/data-access/model-data/model-datasets/global-ensemble-forecast-system-gefs)
 mean and median forecasts of setup are represented by the red and blue
 curves, respectively. Ensemble spread from the current and three
