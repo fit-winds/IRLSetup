@@ -1,9 +1,9 @@
-Current Forecast 2020-09-21 12Z
+Current Forecast 2020-09-21 18Z
 -----------------------------------
 
 [![](img/raw_setup.png)](https://fit-winds.github.io/IRLSetup/img/raw_setup.png)
 
-> Forecast valid 2020-09-21 13:37:09.
+> Forecast valid 2020-09-21 19:53:59.
 
 Explanation
 -----------
