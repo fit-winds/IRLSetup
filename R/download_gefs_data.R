@@ -107,7 +107,9 @@ lats <- seq(28, 28.5, by = 0.5)
 # ensemble members
 ens.mems <- c('gec00', 'gep01', 'gep02', 'gep03', 'gep04', 'gep05', 'gep06', 
               'gep07', 'gep08', 'gep09', 'gep10', 'gep11', 'gep12', 'gep13', 
-              'gep14', 'gep15', 'gep16', 'gep17', 'gep18', 'gep19', 'gep20')
+              'gep14', 'gep15', 'gep16', 'gep17', 'gep18', 'gep19', 'gep20',
+              'gep21', 'gep22', 'gep23', 'gep24', 'gep25', 'gep26', 'gep27',
+              'gep28', 'gep29', 'gep30')
 
 # date/run to grab data (yesterday, 18z)
 # date <- format(Sys.Date() - days(1), '%Y%m%d')                          # BH, cycle 18 of previous day
